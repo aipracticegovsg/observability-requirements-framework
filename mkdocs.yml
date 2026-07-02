@@ -1,0 +1,58 @@
+site_name: Observability Requirements Framework
+site_description: >-
+  A structured, risk-tiered telemetry specification for generative and agentic AI
+  systems in the public sector.
+site_author: AI Practice, Government Technology Agency (GovTech), Singapore
+
+theme:
+  name: material
+  icon:
+    logo: material/shield-search
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.integrate
+    - content.code.copy
+  palette:
+    scheme: default
+    primary: white
+    accent: blue
+
+nav:
+  - Home: index.md
+  - ORF Framework:
+      - Introduction: framework/introduction.md
+      - Operational Categories: framework/operational-categories.md
+      - Risk Tiering: framework/risk-tiering.md
+      - Requirements Matrix: framework/requirements-matrix.md
+      - Requirements Table: framework/requirements-table.md
+      - Metric Definitions: framework/metric-definitions.md
+      - ARC Control Crosswalk: framework/crosswalk.md
+  - Tools:
+      - Requirements Checklist: framework/checklist.md
+  - Implementation:
+      - Adoption Strategy: implementation/strategy.md
+
+markdown_extensions:
+  - footnotes
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.emoji
+  - attr_list
+  - md_in_html
+  - tables
+
+plugins:
+  - search
+
+extra_css:
+  - https://unpkg.com/tabulator-tables@5.6.1/dist/css/tabulator.min.css
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://unpkg.com/tabulator-tables@5.6.1/dist/js/tabulator.min.js
+  - javascripts/requirements-table.js
+  - javascripts/checklist.js

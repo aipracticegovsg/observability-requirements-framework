@@ -1,0 +1,28 @@
+# Priority tiers of telemetry items. The tier is an intrinsic property of the
+# item: how foundational it is to the framework, independent of any deployment.
+# Source: ORF Technical Paper, Section 7.4.2 "Telemetry Requirements Matrix".
+
+1:
+  name: "Tier 1"
+  description: >-
+    The most foundational telemetry, anchoring routine production oversight.
+    Includes prompt and response logs, tool call logs, and basic error logs.
+
+2:
+  name: "Tier 2"
+  description: >-
+    Extends the substrate to support incident investigation and accountability.
+    Includes knowledge-base access logs, distributed traces, and override
+    tracking.
+
+3:
+  name: "Tier 3"
+  description: >-
+    Supports deeper performance and safety analysis, such as drift detection,
+    override-reason annotations, and segment-wise fairness measures.
+
+4:
+  name: "Tier 4"
+  description: >-
+    Research-grade or aspirational telemetry, such as hallucination rate on
+    labelled samples and bias auditing on representative test sets.

@@ -1,0 +1,636 @@
+# =============================================================================
+# Observability Requirements Table (Table 2) merged with Metric Definitions
+# (Table 3) from the ORF Technical Paper, Section 7.5–7.6.
+#
+# Structure:
+#   - category: <key matching data/categories.yaml>
+#     risks:
+#       - risk:        what could go wrong
+#         impact:      why it matters
+#         mitigations: control actions
+#         items:       telemetry items (metrics / logs / traces), each with:
+#           id:         stable identifier ORF-<CAT>-<nn>
+#           tier:       priority tier 1-4 (maps to data/matrix.yaml)
+#           type:       metric | log | trace
+#           name:       item description (from Table 2)
+#           definition: mathematical definition (from Table 3)
+# =============================================================================
+
+- category: AGT
+  risks:
+    - id: AGT-R1
+      risk: >-
+        Agent actions and decision steps are not logged in sufficient detail to
+        reconstruct specific sessions when necessary.
+      impact: >-
+        Cannot perform root-cause analysis or incident investigation. Fails the
+        ARC framework's baseline requirements for monitoring and traceability and
+        for tamper-evident audit trails.
+      mitigations: >-
+        Centralised, access-controlled logging pipeline; audit logs for prompts,
+        responses, and tool invocations; log retention and access policies aligned
+        with organisational privacy and regulatory requirements; alerting when
+        logging or tracing drops below expected coverage (e.g., missing trace IDs).
+      items:
+        - id: ORF-AGT-01
+          tier: 1
+          type: log
+          name: >-
+            LLM prompt and response pairs with intermediate reasoning steps
+            (where available), timestamps, and token usage.
+          definition: >-
+            For each turn i, log r_i = (timestamp_i, prompt_i, response_i,
+            tokens_in_i, tokens_out_i, intermediate_steps_i).
+        - id: ORF-AGT-02
+          tier: 1
+          type: log
+          name: "Tool / API call events with parameters, outcomes, and retries."
+          definition: >-
+            For each call event e_j, log e_j = (timestamp_j, tool_j, parameter_j,
+            outcome_j, retry_attempt_j).
+        - id: ORF-AGT-03
+          tier: 2
+          type: log
+          name: >-
+            Knowledge base / memory access logs (queries, retrieved documents,
+            memory writes).
+          definition: >-
+            For each access event e_k, log e_k = (timestamp_k, query_k,
+            retrieved_docs_k, memory_write_k).
+        - id: ORF-AGT-04
+          tier: 2
+          type: trace
+          name: >-
+            Unique trace IDs per query–task–tool call chain (end-to-end
+            distributed tracing).
+          definition: >-
+            Assign trace IDs for all events e in a query–task–tool chain:
+            trace_id_e = constant. Coverage:
+            trace_coverage = |{e : trace_id_e present}| / |{e}|.
+        - id: ORF-AGT-05
+          tier: 1
+          type: log
+          name: "Error and exception logs."
+          definition: >-
+            error_log = {(timestamp, trace_id, error_type, error_message,
+            stack_hash)}; error_count = |error_log| over the observation window.
+        - id: ORF-AGT-06
+          tier: 2
+          type: trace
+          name: "Subtask decomposition."
+          definition: >-
+            Represent a task as a tree D whose nodes are subtasks and whose edges
+            capture parent–child relations. decomposition_size = |nodes(D)|.
+        - id: ORF-AGT-07
+          tier: 2
+          type: trace
+          name: "Retrieval-to-response traces."
+          definition: >-
+            Trace graph G = (V, E) linking retrieved items d to response spans y;
+            edge (d → y) exists if d was used to generate y.
+    - id: AGT-R2
+      risk: >-
+        Runaway or looping behaviour by the agent (e.g., infinite tool calls,
+        repeated failures).
+      impact: >-
+        Resource exhaustion and potential denial of service. The agent may
+        repeatedly hit external systems or tools with harmful or unintended
+        actions.
+      mitigations: >-
+        Circuit breakers that stop tasks exceeding maximum steps, latency, or
+        anomalous tool usage (aligned with ARC's architecture controls); guardrails
+        in agent logic that cap loops and retries; automated alerts when loop
+        patterns are detected, with auto-handover to a human if breached.
+      items:
+        - id: ORF-AGT-08
+          tier: 1
+          type: metric
+          name: >-
+            Tool usage count per task/session with thresholds for abnormal spikes.
+          definition: "tool_counts = #tool calls in s. Alert if tool_counts > threshold."
+        - id: ORF-AGT-09
+          tier: 1
+          type: metric
+          name: "Task duration and step count per task/session."
+          definition: >-
+            task_duration_T = task_end_T − task_start_T;
+            step_count_T = #actions in T.
+        - id: ORF-AGT-10
+          tier: 2
+          type: trace
+          name: "Error lineage traces linking repeated failures."
+          definition: >-
+            Build a retry-lineage graph whose nodes are attempts and whose edges
+            link attempt k → k+1 when a failure triggers a retry.
+        - id: ORF-AGT-11
+          tier: 1
+          type: metric
+          name: "Request retry counts per tool call."
+          definition: "#retries = #attempts − 1; retry_rate = #retries / #calls."
+    - id: AGT-R3
+      risk: "Silent regressions after model, tool, or prompt changes."
+      impact: >-
+        Behaviour changes are not detected until after harm or a major incident
+        occurs. Violates governance expectations on controlled rollout and
+        monitoring.
+      mitigations: >-
+        Change-management process with approvals for high-risk changes; canary or
+        shadow deployments with explicit monitoring of safety metrics; automatic
+        rollback triggers when key safety indicators degrade beyond thresholds.
+      items:
+        - id: ORF-AGT-12
+          tier: 2
+          type: log
+          name: "Model deployment / change logs (who, what, when)."
+          definition: >-
+            deployment_log = {(timestamp, actor, model_id, model_version,
+            environment)}.
+        - id: ORF-AGT-13
+          tier: 2
+          type: log
+          name: "Configuration / prompt / policy change logs with approver identity."
+          definition: >-
+            change_log = {(timestamp, change_type, artifact_id, description, owner,
+            approver)}.
+        - id: ORF-AGT-14
+          tier: 4
+          type: metric
+          name: >-
+            Side-by-side performance metrics pre- and post-change (hallucination
+            rate, refusal rate, etc.).
+          definition: >-
+            For any metric m: Δm = m_after − m_before;
+            relative change = (m_after − m_before) / m_before.
+
+- category: PERF
+  risks:
+    - id: PERF-R1
+      risk: "Undetected model performance drift on critical tasks or domains."
+      impact: "Gradual increase in harmful or incorrect outputs."
+      mitigations: >-
+        Periodic evaluation on safety-critical test sets, with results logged and
+        compared over time; human-in-the-loop workflows for high-impact actions;
+        investigations triggered when override rate crosses a threshold for
+        specific flows.
+      items:
+        - id: ORF-PERF-01
+          tier: 3
+          type: metric
+          name: >-
+            Performance / model-drift metrics on critical tasks (context- and
+            agency-specific).
+          definition: "drift = diff(performance_current, performance_baseline)."
+        - id: ORF-PERF-02
+          tier: 2
+          type: log
+          name: >-
+            Human override / edit logs and counts, especially for harmful or
+            incorrect outputs.
+          definition: >-
+            edit_counts = #edited outputs in s;
+            edit_rates = edit_counts / #outputs in s.
+        - id: ORF-PERF-03
+          tier: 4
+          type: metric
+          name: >-
+            Task completion rate per session, with explicit labelling of safe
+            failure (the agent declines and the task is not completed) versus
+            unsafe success (the task is completed but the agent emits unsafe or
+            policy-violating content).
+          definition: >-
+            For each session, label its outcome
+            outcome ∈ {safe_failure, unsafe_failure, unsafe_success, safe_success}.
+            Report, for each label ℓ, P(outcome = ℓ) = #{outcome = ℓ} / #outcomes.
+    - id: PERF-R2
+      risk: >-
+        Hallucinations or ungrounded responses leading to harmful advice (e.g.,
+        policy advice).
+      impact: "Legal liability and reputational damage."
+      mitigations: >-
+        Require citations or evidence for high-risk responses, with logging when
+        absent; safety policy layer or secondary-checker model for high-risk
+        content; tight domain scoping with refusal of out-of-domain tasks; periodic
+        manual audits of random output samples with incident logging.
+      items:
+        - id: ORF-PERF-04
+          tier: 4
+          type: metric
+          name: >-
+            Hallucination rate on sampled outputs (number of materially incorrect
+            answers).
+          definition: >-
+            hallucination_rate = #materially_incorrect_responses / #sampled_responses.
+        - id: ORF-PERF-05
+          tier: 4
+          type: metric
+          name: >-
+            Number of ungrounded responses (no sources or weak citations) for
+            high-risk domains.
+          definition: >-
+            ungrounded_count = #high-risk outputs with missing or weak citations;
+            ungrounded_rate = ungrounded_count / #high-risk outputs.
+        - id: ORF-PERF-06
+          tier: 3
+          type: metric
+          name: >-
+            Retrieval metrics (e.g., top-K recall, retrieval accuracy, embedding
+            drift) where retrieval is supposed to ground responses.
+          definition: >-
+            drift = diff(performance_current, performance_baseline), where
+            performance ∈ {top-K recall, retrieval accuracy, embedding drift}.
+    - id: PERF-R3
+      risk: "Biased or unfair outputs across demographic-related inputs."
+      impact: "Discrimination, regulatory non-compliance, and ethics breaches."
+      mitigations: >-
+        Regular fairness audits with logged findings and remediation plans; updates
+        to prompts, filters, or training data to reduce observed bias; human review
+        for sensitive use cases or impacted groups.
+      items:
+        - id: ORF-PERF-07
+          tier: 4
+          type: metric
+          name: "Bias and fairness indicators (e.g., parity metrics) on representative test sets."
+          definition: >-
+            parity_gap = max_g |performance_g − performance_ref|, where
+            performance ∈ {approval rate, refusal rate, hallucination rate}.
+        - id: ORF-PERF-08
+          tier: 4
+          type: metric
+          name: "Segment-wise hallucination or refusal rates by sensitive attribute."
+          definition: >-
+            For group g: rate_g = #hallucination/refusal events for g / #outputs for g.
+            Report max_g rate_g.
+
+- category: UX
+  risks:
+    - id: UX-R1
+      risk: >-
+        Abusive or malicious user behaviour (e.g., prompt injection, scams,
+        probing for sensitive data) goes undetected.
+      impact: >-
+        Security compromise, data leakage, and policy violations. The ARC
+        "monitoring and traceability" risk is not properly mitigated.
+      mitigations: >-
+        Rate-limiting, IP/user throttling, and blocking for abusive activity; input
+        validation and sanitisation; strong filters against prompt injection; rules
+        or prompts that constrain model behaviour in the presence of adversarial
+        input.
+      items:
+        - id: ORF-UX-01
+          tier: 2
+          type: log
+          name: "Logs of detected unexpected or out-of-scope query types and topics."
+          definition: >-
+            OOS_log = {(timestamp, session_id, oos_label)};
+            oos_rate = #out-of-scope queries / #queries.
+        - id: ORF-UX-02
+          tier: 1
+          type: metric
+          name: "Content policy violation attempts and model refusals per user/session."
+          definition: >-
+            Per user u or session s: violation_attempt_rate = #attempts / #queries;
+            refusal_rate = #refusals / #queries.
+        - id: ORF-UX-03
+          tier: 1
+          type: trace
+          name: "Session traces for flagged abusive sessions."
+          definition: >-
+            For flagged session s, store the ordered sequence of events
+            {(timestamp_e, prompt_e, tool_call_e, output_e)} for reconstruction.
+    - id: UX-R2
+      risk: "High rate of human handover or override but no structured tracking."
+      impact: >-
+        Hidden failure modes and an inability to demonstrate to regulators that
+        safety controls actually work.
+      mitigations: >-
+        Explicit handover protocol with guidelines for operators; periodic review
+        of high-risk handover cases for systemic fixes; training for operators to
+        consistently label safety versus non-safety escalations.
+      items:
+        - id: ORF-UX-04
+          tier: 2
+          type: metric
+          name: "Number of sessions requiring human handover or override."
+          definition: >-
+            override_count = #sessions requiring handover/override;
+            override_rate = override_count / #sessions.
+        - id: ORF-UX-05
+          tier: 3
+          type: log
+          name: >-
+            Human annotations on the reason for handover (safety, quality,
+            capability gap, policy issue).
+          definition: >-
+            handover_annotation = {(timestamp, session_id, handover_reason,
+            description)}, where handover_reason ∈ {safety, quality, capability
+            gap, policy}.
+        - id: ORF-UX-06
+          tier: 2
+          type: metric
+          name: "User feedback (thumbs up/down) tied to specific responses."
+          definition: "satisfaction_rate = #thumbs up / (#thumbs up + #thumbs down)."
+        - id: ORF-UX-07
+          tier: 3
+          type: metric
+          name: "Repeat queries / user retry rates (number of repeated queries per session)."
+          definition: "repeat_rate = #repeated queries in session / #queries in session."
+        - id: ORF-UX-08
+          tier: 3
+          type: metric
+          name: "Number of users abandoning their sessions."
+          definition: "abandon_rate = #inactive sessions that timed out / #sessions started."
+
+- category: SYS
+  risks:
+    - id: SYS-R1
+      risk: >-
+        System outages, timeouts, or partial failures that produce unsafe states
+        (e.g., an external tool action completed but its response is lost).
+      impact: >-
+        Incomplete operations and inconsistent state. Loss of traceability for some
+        actions.
+      mitigations: >-
+        SRE-style monitoring with on-call rotation for safety-critical systems;
+        graceful degradation and safe-fail behaviours (e.g., retry rather than
+        incomplete execution); transactional semantics or idempotency for critical
+        tools; failover and redundancy for critical dependencies.
+      items:
+        - id: ORF-SYS-01
+          tier: 2
+          type: metric
+          name: "System uptime / availability."
+          definition: "availability = (total runtime − downtime) / total runtime."
+        - id: ORF-SYS-02
+          tier: 2
+          type: metric
+          name: "Error rates (e.g., HTTP 5xx, tool invocation failures)."
+          definition: "error_rate = #errors / #requests."
+        - id: ORF-SYS-03
+          tier: 2
+          type: metric
+          name: "Timeout / abort counts per request and per tool."
+          definition: "Per request or tool: timeout_count = #timeouts and aborts in the period."
+        - id: ORF-SYS-04
+          tier: 1
+          type: log
+          name: "System request logs."
+          definition: >-
+            request_log = {(timestamp, request_id, service_id, endpoint_id, status,
+            latency_ms, bytes)}.
+        - id: ORF-SYS-05
+          tier: 1
+          type: log
+          name: "System timeout / abort logs."
+          definition: "timeout_log = {(timestamp, request_id, tool_id, timeout_reason)}."
+        - id: ORF-SYS-06
+          tier: 1
+          type: log
+          name: "System error logs and crash reports."
+          definition: >-
+            error_log = {(timestamp, service_id, error_code, stack_hash, crash_id)};
+            crash_count = #system crashes in the period.
+        - id: ORF-SYS-07
+          tier: 2
+          type: metric
+          name: "System throughput and queue length."
+          definition: >-
+            throughput = #requests / Δt; q̄ = (1/Δt) ∫ q(t) dt, where Δt is the
+            observation window and q(t) is the number of requests waiting in the
+            queue at time t.
+        - id: ORF-SYS-08
+          tier: 2
+          type: metric
+          name: "GPU / CPU / memory utilisation (for capacity risk)."
+          definition: >-
+            ū = (1/Δt) ∫ util(t) dt, where Δt is the observation window and util(t)
+            is the utilisation of GPU / CPU / memory at time t.
+        - id: ORF-SYS-09
+          tier: 2
+          type: trace
+          name: "Distributed request traces across services (where multi-service flows exist)."
+          definition: >-
+            A trace is a set of spans across services; each
+            span = (trace_id, span_id, parent_id, service_id, timestamp_start,
+            timestamp_end).
+        - id: ORF-SYS-10
+          tier: 3
+          type: metric
+          name: "Redundancy and failover success rates."
+          definition: "failover_success_rate = #successful failovers / #failover attempts."
+    - id: SYS-R2
+      risk: "Unexpected traffic spikes or abuse."
+      impact: >-
+        Resource exhaustion and degraded safety controls. Monitoring, filtering,
+        and policy enforcement components may fail under load.
+      mitigations: >-
+        Auto-scaling with limits specifically for safety-critical components (e.g.,
+        filters, policy engines, logging pipeline); rate-limiting and quota
+        enforcement at API gateways; load testing under adversarial traffic
+        patterns.
+      items:
+        - id: ORF-SYS-11
+          tier: 2
+          type: metric
+          name: "Traffic volume per user."
+          definition: >-
+            For user u: traffic_volume_u is the number of requests, or bytes
+            transferred, per period.
+        - id: ORF-SYS-12
+          tier: 2
+          type: metric
+          name: "Error and latency distribution during spikes."
+          definition: >-
+            latency_quantiles = {q_p : P(latency ≤ q_p) = p} for
+            p ∈ {0.5, 0.95, 0.99}.
+        - id: ORF-SYS-13
+          tier: 3
+          type: metric
+          name: "Cost per query, task, or session."
+          definition: "cost = total cost / #queries / tasks / sessions."
+
+- category: SEC
+  risks:
+    - id: SEC-R1
+      risk: "Harmful, toxic, or policy-violating outputs that are not detected or not logged."
+      impact: >-
+        Direct policy violations and potential legal breaches. Cannot demonstrate
+        due diligence in post-incident review.
+      mitigations: >-
+        Strong content policy and safety filters on the user-facing interface;
+        safety tuning and system prompts aligned to policy; clear escalation
+        workflow for flagged incidents with human review and logging.
+      items:
+        - id: ORF-SEC-01
+          tier: 3
+          type: metric
+          name: "Toxic / harmful output rate (flagged by filters or human review)."
+          definition: "toxic_rate = #outputs flagged by guardrails / human review / #outputs."
+        - id: ORF-SEC-02
+          tier: 2
+          type: metric
+          name: "Number of policy violations detected versus refused."
+          definition: >-
+            refused_share = #refusals due to policy violations / #policy violations
+            per period.
+        - id: ORF-SEC-03
+          tier: 2
+          type: log
+          name: "Model refusal events and categories (e.g., safety, privacy)."
+          definition: >-
+            For category c: refusal_count_c = #refusals attributable to c. Report
+            the distribution refusal_count_c / Σ_c refusal_count_c across all
+            categories.
+        - id: ORF-SEC-04
+          tier: 3
+          type: metric
+          name: "Distribution of content categories requested (especially sensitive topics)."
+          definition: "distribution(c) = #requests of category c / #requests."
+    - id: SEC-R2
+      risk: >-
+        Data privacy or confidentiality breaches (e.g., PII or sensitive
+        organisational data exposed in outputs or logs).
+      impact: "Regulatory fines, contractual breaches, and reputational harm."
+      mitigations: >-
+        Data classification and tagging, with controls on what can be retrieved and
+        surfaced; pseudonymisation or anonymisation of logs where feasible;
+        encryption in transit and at rest; strict role-based access control on log
+        access; periodic privacy audits of logs and training data.
+      items:
+        - id: ORF-SEC-05
+          tier: 2
+          type: metric
+          name: "Privacy incident count (PII exposure events)."
+          definition: "privacy_incident_count = #PII exposure events detected in the period."
+        - id: ORF-SEC-06
+          tier: 2
+          type: log
+          name: "Privacy breach incident logs (records of detected personal or sensitive data leaks)."
+          definition: >-
+            privacy_incident_log = {(timestamp, incident_id, exposure_type,
+            severity_level, trace_id)}.
+        - id: ORF-SEC-07
+          tier: 2
+          type: metric
+          name: "Classified information leakage incidents."
+          definition: "classified_leak_count = #classified-data exposure events detected in the period."
+        - id: ORF-SEC-08
+          tier: 2
+          type: log
+          name: "Memory / KB access logs with classification of data sensitivity."
+          definition: >-
+            For KB / memory accesses: access_log = {(timestamp, agent_id,
+            resource_id, sensitivity_level)}.
+    - id: SEC-R3
+      risk: "Unauthorised tool usage or privilege escalation by agents or users."
+      impact: "Fraud, data exfiltration, and abuse of external systems."
+      mitigations: >-
+        Strong roles and access controls for agents and tools (aligned with ARC's
+        Roles & Access Controls); short-lived, scoped credentials; hardware or
+        high-assurance authorisation for critical tools; automated anomaly
+        detection on privileged tool usage patterns.
+      items:
+        - id: ORF-SEC-09
+          tier: 2
+          type: metric
+          name: "Unauthorised or failed privileged tool usage attempts."
+          definition: "unauthorised_rate = #unauthorised privileged attempts / #privileged attempts."
+        - id: ORF-SEC-10
+          tier: 2
+          type: log
+          name: "Audit logs of role / permission changes and token issuance."
+          definition: >-
+            authorised_change_log = {(timestamp, actor, role/permission change,
+            target principal)}.
+        - id: ORF-SEC-11
+          tier: 2
+          type: log
+          name: "Agent identity / credential usage logs."
+          definition: >-
+            credential_use_log = {(timestamp, agent_id, credential_id, scope,
+            tool_id)}.
+    - id: SEC-R4
+      risk: "Incomplete or mutable audit trails for safety incidents."
+      impact: "Cannot prove accountability or reconstruct events for regulators."
+      mitigations: >-
+        Append-only log stores or log encryption (per ARC guidance); retention
+        policies that cover regulatory requirements; separation of duties so that
+        operators cannot modify audit logs.
+      items:
+        - id: ORF-SEC-12
+          tier: 2
+          type: trace
+          name: "Full conversation traces retained for flagged safety and security incidents."
+          definition: >-
+            For each flagged incident i, retain the full transcript
+            c_i = (timestamp, messages, tool_id, agent_id) as an immutable record.
+        - id: ORF-SEC-13
+          tier: 2
+          type: log
+          name: "Audit logs for prompts, responses, tool calls, and memory operations."
+          definition: >-
+            With append-only integrity controls: audit_log = {(timestamp,
+            session_id, prompt, response, tool_id, memory_ops)}.
+
+- category: GOV
+  risks:
+    - id: GOV-R1
+      risk: >-
+        Model, prompt, or policy changes are made without audit, safety
+        assessment, or rollback path.
+      impact: >-
+        Safety regressions slip into production. Weak governance and non-compliance
+        with internal AI policies.
+      mitigations: >-
+        Governance process requiring risk and impact assessment before high-risk
+        changes; structured safety review and sign-off for new capabilities;
+        experiment tracking with safety metrics (hallucination rate, harmful output
+        rate, bias indicators) as first-class KPIs.
+      items:
+        - id: ORF-GOV-01
+          tier: 3
+          type: metric
+          name: >-
+            Deployment metrics: rollout frequency and percentage of changes with
+            safety evaluation.
+          definition: >-
+            rollout_frequency = #deployments / Δt;
+            safety_evaluation_percent = #changes with safety evaluation / #changes.
+        - id: ORF-GOV-02
+          tier: 3
+          type: metric
+          name: >-
+            Audit metrics: percentage of audited sessions and number of audit
+            findings per period.
+          definition: >-
+            audited_session_percent = #audited sessions / #sessions;
+            findings_rate = #audit findings / Δt.
+        - id: ORF-GOV-03
+          tier: 2
+          type: log
+          name: "Configuration change logs with owners and approvers."
+          definition: >-
+            change_log = {(timestamp, change_type, artifact_id, description, owner,
+            approver)}.
+    - id: GOV-R2
+      risk: "Limited or ad hoc safety audits and incident post-mortems."
+      impact: "Repeated incidents and a perception by regulators that controls are ineffective."
+      mitigations: >-
+        Regular, documented safety reviews (e.g., quarterly) with tracked actions;
+        post-incident review templates emphasising root cause, control gaps, and
+        design changes; governance dashboards highlighting safety KPIs to
+        leadership.
+      items:
+        - id: ORF-GOV-04
+          tier: 3
+          type: log
+          name: "Audit logs for reviewed sessions and findings."
+          definition: >-
+            review_log = {(timestamp, session_id, reviewer, finding_label,
+            description, severity)}; findings_count = #findings in the period.
+        - id: ORF-GOV-05
+          tier: 3
+          type: metric
+          name: "Incident count and severity over time, with recurrence indicators."
+          definition: >-
+            incident_count = #incidents in the period;
+            recurrence_rate = #recurrences / #incidents.

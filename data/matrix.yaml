@@ -1,0 +1,25 @@
+# Telemetry Requirements Matrix (Table 1). The action required of an agency for a
+# given item is the intersection of the item's priority tier with the system's
+# risk level. Source: ORF Technical Paper, Section 7.4.2 / Table 1.
+
+actions:
+  mandatory:
+    label: "Mandatory"
+    description: "Must be implemented, with no waiver permitted."
+  mandatory_waivable:
+    label: "Mandatory but Waivable"
+    description: >-
+      Must be implemented unless a waiver is obtained from the agency's
+      responsible-AI oversight function with a documented risk acceptance.
+  good_to_have:
+    label: "Good-to-Have"
+    description: >-
+      Strongly encouraged but not required; agencies may implement it based on
+      their specific needs and constraints.
+
+# matrix[priority_tier][risk_level] -> action key
+matrix:
+  1: { high: mandatory,          medium: mandatory,           low: good_to_have }
+  2: { high: mandatory,          medium: mandatory_waivable,  low: good_to_have }
+  3: { high: mandatory_waivable, medium: good_to_have,        low: good_to_have }
+  4: { high: good_to_have,       medium: good_to_have,        low: good_to_have }

@@ -1,0 +1,169 @@
+# =============================================================================
+# ORF ↔ ARC crosswalk.
+#
+# Maps each ORF risk group (and the telemetry items beneath it) to the controls
+# in GovTech's Agentic Risk & Capability (ARC) framework that the telemetry
+# supports or evidences.
+#
+# basis:
+#   explicit = the ORF Technical Paper explicitly references this ARC theme or
+#              control in the risk's text or mitigations.
+#   thematic = a reasoned alignment by the framework authors of this repo; it is
+#              NOT stated verbatim in the ORF paper and should be treated as an
+#              interpretive mapping.
+#
+# Keyed by the ORF risk-group id (see data/requirements.yaml).
+# =============================================================================
+
+- orf_risk: AGT-R1
+  note: >-
+    ORF states this telemetry exists to satisfy "the ARC framework's baseline
+    requirements for monitoring and traceability and for tamper-evident audit
+    trails."
+  controls:
+    - { control: CTRL-043, basis: explicit }
+    - { control: CTRL-027, basis: explicit }
+    - { control: CTRL-028, basis: explicit }
+    - { control: CTRL-042, basis: explicit }
+    - { control: CTRL-049, basis: thematic }
+
+- orf_risk: AGT-R2
+  note: >-
+    ORF mitigations for runaway/looping behaviour are described as "aligned with
+    ARC's architecture controls."
+  controls:
+    - { control: CTRL-026, basis: explicit }
+    - { control: CTRL-007, basis: explicit }
+    - { control: CTRL-083, basis: thematic }
+    - { control: CTRL-112, basis: thematic }
+
+- orf_risk: AGT-R3
+  note: >-
+    Change/deployment logging supports ARC change-management and audit controls;
+    ARC has no dedicated deployment-change-log control, so this is thematic.
+  controls:
+    - { control: CTRL-099, basis: thematic }
+    - { control: CTRL-096, basis: thematic }
+    - { control: CTRL-010, basis: thematic }
+
+- orf_risk: PERF-R1
+  note: "Drift detection evidences ARC's periodic-audit and human-oversight controls."
+  controls:
+    - { control: CTRL-010, basis: thematic }
+    - { control: CTRL-021, basis: thematic }
+    - { control: CTRL-003, basis: thematic }
+
+- orf_risk: PERF-R2
+  note: >-
+    Groundedness/hallucination telemetry maps directly onto ARC's hallucination
+    and source-verification controls.
+  controls:
+    - { control: CTRL-056, basis: thematic }
+    - { control: CTRL-058, basis: thematic }
+    - { control: CTRL-057, basis: thematic }
+    - { control: CTRL-081, basis: thematic }
+    - { control: CTRL-082, basis: thematic }
+
+- orf_risk: PERF-R3
+  note: >-
+    ARC has no dedicated fairness control; the closest analogue is its
+    multi-objective success criteria (which include ethics). Fairness/parity
+    telemetry is an ORF extension beyond ARC.
+  controls:
+    - { control: CTRL-016, basis: thematic }
+
+- orf_risk: UX-R1
+  note: >-
+    ORF notes that without this telemetry "the ARC 'monitoring and traceability'
+    risk is not properly mitigated"; the listed input-defence controls are
+    thematic.
+  controls:
+    - { control: CTRL-042, basis: explicit }
+    - { control: CTRL-027, basis: explicit }
+    - { control: CTRL-078, basis: thematic }
+    - { control: CTRL-005, basis: thematic }
+    - { control: CTRL-033, basis: thematic }
+
+- orf_risk: UX-R2
+  note: >-
+    Structured handover/override tracking evidences ARC's human-in-the-loop and
+    logging controls; the structured-annotation requirement is an ORF extension.
+  controls:
+    - { control: CTRL-003, basis: thematic }
+    - { control: CTRL-043, basis: thematic }
+
+- orf_risk: SYS-R1
+  note: >-
+    ARC's coverage of system reliability is limited; these are
+    architecture/monitoring analogues for safe-fail and recovery behaviour.
+  controls:
+    - { control: CTRL-026, basis: thematic }
+    - { control: CTRL-024, basis: thematic }
+    - { control: CTRL-025, basis: thematic }
+    - { control: CTRL-091, basis: thematic }
+
+- orf_risk: SYS-R2
+  note: "Capacity/abuse telemetry supports ARC's resource-limit controls."
+  controls:
+    - { control: CTRL-112, basis: thematic }
+    - { control: CTRL-113, basis: thematic }
+
+- orf_risk: SEC-R1
+  note: "Harmful-output telemetry evidences ARC's safety-layer and output-guardrail controls."
+  controls:
+    - { control: CTRL-002, basis: thematic }
+    - { control: CTRL-052, basis: thematic }
+    - { control: CTRL-053, basis: thematic }
+    - { control: CTRL-054, basis: thematic }
+    - { control: CTRL-078, basis: thematic }
+
+- orf_risk: SEC-R2
+  note: "Privacy telemetry maps onto ARC's PII guardrails and memory-encryption controls."
+  controls:
+    - { control: CTRL-103, basis: thematic }
+    - { control: CTRL-055, basis: thematic }
+    - { control: CTRL-104, basis: thematic }
+    - { control: CTRL-022, basis: thematic }
+    - { control: CTRL-030, basis: thematic }
+
+- orf_risk: SEC-R3
+  note: >-
+    ORF mitigations are described as "aligned with ARC's Roles & Access
+    Controls."
+  controls:
+    - { control: CTRL-034, basis: explicit }
+    - { control: CTRL-036, basis: explicit }
+    - { control: CTRL-039, basis: explicit }
+    - { control: CTRL-040, basis: explicit }
+    - { control: CTRL-041, basis: explicit }
+    - { control: CTRL-015, basis: explicit }
+    - { control: CTRL-037, basis: thematic }
+    - { control: CTRL-038, basis: thematic }
+    - { control: CTRL-077, basis: thematic }
+
+- orf_risk: SEC-R4
+  note: >-
+    ORF mitigations specify "append-only log stores or log encryption (per ARC
+    guidance)."
+  controls:
+    - { control: CTRL-028, basis: explicit }
+    - { control: CTRL-043, basis: explicit }
+    - { control: CTRL-022, basis: thematic }
+
+- orf_risk: GOV-R1
+  note: >-
+    Pre-change governance telemetry supports ARC's change-management, code-review,
+    and rollback controls.
+  controls:
+    - { control: CTRL-099, basis: thematic }
+    - { control: CTRL-096, basis: thematic }
+    - { control: CTRL-010, basis: thematic }
+    - { control: CTRL-025, basis: thematic }
+
+- orf_risk: GOV-R2
+  note: >-
+    Audit-cadence and incident-recurrence telemetry evidences ARC's periodic-audit
+    controls; the review-cadence and recurrence metrics are ORF extensions.
+  controls:
+    - { control: CTRL-010, basis: thematic }
+    - { control: CTRL-021, basis: thematic }

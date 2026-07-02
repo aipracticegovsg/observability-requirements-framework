@@ -1,0 +1,57 @@
+# Six operational categories of the Observability Requirements Framework (ORF).
+# Source: ORF Technical Paper, Section 7.4.1 "Operational Categories".
+
+AGT:
+  name: "Agent-Level Observability"
+  order: 1
+  goals: >-
+    Support debugging of individual queries; provide visibility into agent
+    decision pathways; surface anomalies in output; support root-cause analysis;
+    provide an audit trail for accountability.
+
+PERF:
+  name: "Agent Performance"
+  order: 2
+  goals: >-
+    Track changes (and drifts) in agent input/output distributions and
+    performance over time; assess groundedness and factual accuracy; track the
+    level of human oversight and intervention; quantify safety and fairness
+    indicators to identify harmful or biased outputs.
+
+UX:
+  name: "User Interaction & Behaviour"
+  order: 3
+  goals: >-
+    Assess user satisfaction and engagement; surface common intents,
+    preferences, and usage patterns; identify UX pain points and unmet needs;
+    detect abuse or misuse via abnormal usage patterns; identify prompts or
+    topics that receive negative feedback; identify features most used versus
+    those the service fails to handle.
+
+SYS:
+  name: "System Performance, Health & Reliability"
+  order: 4
+  goals: >-
+    Track reliability and availability over time; measure operational efficiency
+    and cost-effectiveness; detect regressions early; enable anomaly detection on
+    system-level metrics; support SRE practice with alerts, dashboards, and human
+    intervention as needed; facilitate post-incident root-cause analysis; ensure
+    conformance with SLAs and budget constraints.
+
+SEC:
+  name: "Safety & Security Compliance"
+  order: 5
+  goals: >-
+    Monitor and enforce ethical guidelines, laws, and government policies; ensure
+    agent behaviour stays within defined use boundaries; build trust and satisfy
+    Responsible AI requirements and reporting; ensure sensitive or protected data
+    is handled properly and not leaked; surface potential security threats (e.g.,
+    prompt injection attempts, malicious inputs) by tracking anomalous events.
+
+GOV:
+  name: "Product Lifecycle & Governance"
+  order: 6
+  goals: >-
+    Provide insight into the maturity and effectiveness of the agency's LLMOps
+    and AgentOps processes; capture change and audit controls; track the cadence
+    of structured review.
