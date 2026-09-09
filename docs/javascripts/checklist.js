@@ -52,6 +52,13 @@ __orfReady(function () {
 
   var DATA = [];
 
+  // Keep framework content as text when it is inserted into HTML.
+  function esc(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
   function render() {
     var risk = riskSel.value;
     var showGth = gthChk.checked;
@@ -80,19 +87,19 @@ __orfReady(function () {
 
     var html = "";
     order.forEach(function (cat) {
-      html += '<h3 class="orf-cl-cat">' + cat + "</h3>";
+      html += '<h3 class="orf-cl-cat">' + esc(cat) + "</h3>";
       html += '<table class="orf-cl-table"><thead><tr>' +
         "<th>Action</th><th>Tier</th><th>Type</th><th>ID</th><th>Telemetry Item</th>" +
         "</tr></thead><tbody>";
       groups[cat].forEach(function (row) {
         html +=
           "<tr>" +
-          '<td><span class="orf-action orf-action-' + row.cls + '">' + row.action + "</span></td>" +
-          '<td><span class="orf-tier orf-tier-' + row.item.tier + '">Tier ' + row.item.tier + "</span></td>" +
-          "<td>" + row.item.type + "</td>" +
-          "<td><code>" + row.item.id + "</code></td>" +
-          '<td>' + row.item.name +
-          '<div class="orf-cl-def">' + row.item.definition + "</div></td>" +
+          '<td><span class="orf-action orf-action-' + esc(row.cls) + '">' + esc(row.action) + "</span></td>" +
+          '<td><span class="orf-tier orf-tier-' + esc(row.item.tier) + '">Tier ' + esc(row.item.tier) + "</span></td>" +
+          "<td>" + esc(row.item.type) + "</td>" +
+          "<td><code>" + esc(row.item.id) + "</code></td>" +
+          '<td>' + esc(row.item.name) +
+          '<div class="orf-cl-def">' + esc(row.item.definition) + "</div></td>" +
           "</tr>";
       });
       html += "</tbody></table>";
