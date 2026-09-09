@@ -53,6 +53,6 @@ extra_css:
   - stylesheets/extra.css
 
 extra_javascript:
-  - javascripts/tabulator.min.js
+  - assets/tabulator.min.js
   - javascripts/requirements-table.js
   - javascripts/checklist.js

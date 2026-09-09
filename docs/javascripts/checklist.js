@@ -54,9 +54,12 @@ __orfReady(function () {
 
   // Keep framework content as text when it is inserted into HTML.
   function esc(value) {
-    return String(value == null ? "" : value).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function render() {
