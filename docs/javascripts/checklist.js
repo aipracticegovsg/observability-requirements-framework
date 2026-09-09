@@ -58,8 +58,8 @@ __orfReady(function () {
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/\"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+      .split(String.fromCharCode(34)).join("&quot;")
+      .split(String.fromCharCode(39)).join("&#39;");
   }
 
   function render() {
